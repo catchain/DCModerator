@@ -1,0 +1,23 @@
+{
+  "name": "dc-moderator",
+  "version": "1.0.0",
+  "description": "Telegram moderation bot: anti-spam, link/stopword filters, inline-button auto-ban, activity top",
+  "type": "module",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "js-yaml": "^4.1.0",
+    "telegraf": "^4.16.3"
+  },
+  "optionalDependencies": {
+    "openai": "^4.77.0"
+  }
+}
