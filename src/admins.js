@@ -31,7 +31,7 @@ export function isAdmin(userId) {
 
 /**
  * Полный иммунитет от модерации: админ, анонимный админ (от имени чата)
- * либо защищённый (связанный) канал.
+ * либо пост из привязанного канала.
  *
  * @param {import('telegraf').Context['message']} message
  * @returns {boolean}
@@ -39,14 +39,23 @@ export function isAdmin(userId) {
 export function isImmune(message) {
   if (!message) return false;
 
+  const isProtectedChannel = (chatId) =>
+    chatId !== null && chatId !== undefined && config.protectedChannelIds.has(chatId);
+
   const senderChat = message.sender_chat;
   if (senderChat) {
     // Анонимный админ постит от имени самого чата.
     if (senderChat.id === config.moderatedChatId) return true;
-    // Защищённый (связанный) канал — никогда не трогаем.
-    if (config.protectedChannelId && senderChat.id === config.protectedChannelId) return true;
-    // Автопересылка из связанного канала в обсуждение.
-    if (message.is_automatic_forward) return true;
+    // Пост от имени привязанного канала.
+    if (isProtectedChannel(senderChat.id)) return true;
+  }
+
+  const forwardFrom = message.forward_from_chat;
+  if (forwardFrom && isProtectedChannel(forwardFrom.id)) return true;
+
+  // Автопост из связанного канала в обсуждение.
+  if (message.is_automatic_forward) {
+    if (!forwardFrom || isProtectedChannel(forwardFrom.id)) return true;
   }
 
   if (message.from && isAdmin(message.from.id)) return true;

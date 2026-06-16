@@ -30,3 +30,23 @@ export function normalizeChatId(raw) {
   if (!Number.isFinite(n)) return null;
   return Number(`-100${n}`);
 }
+
+/**
+ * Парсит один или несколько id из env (через запятую).
+ * Поддерживает несколько имён переменных — все значения объединяются.
+ *
+ * @param  {...string} envNames
+ * @returns {Set<number>}
+ */
+export function parseChatIdList(...envNames) {
+  const ids = new Set();
+  for (const name of envNames) {
+    const raw = process.env[name];
+    if (!raw) continue;
+    for (const part of raw.split(',')) {
+      const id = normalizeChatId(part.trim());
+      if (id !== null) ids.add(id);
+    }
+  }
+  return ids;
+}

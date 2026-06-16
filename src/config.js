@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { normalizeChatId } from './utils/chatId.js';
+import { normalizeChatId, parseChatIdList } from './utils/chatId.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT_DIR = path.resolve(__dirname, '..');
@@ -23,7 +23,7 @@ export const config = {
   botToken: process.env.BOT_TOKEN || '',
 
   moderatedChatId: normalizeChatId(process.env.MODERATED_CHAT_ID),
-  protectedChannelId: normalizeChatId(process.env.PROTECTED_CHANNEL_ID),
+  protectedChannelIds: parseChatIdList('PROTECTED_CHANNEL_ID'),
   logChatId: normalizeChatId(process.env.LOG_CHAT_ID),
 
   newbieMessageThreshold: int('NEWBIE_MESSAGE_THRESHOLD', 5),
