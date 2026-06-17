@@ -24,7 +24,7 @@ warn:
 # --- Причины удаления (используются как {reason} в варнах и в логах) ---
 reason:
   stopword: "подозрение на спам"
-  link_newbie: "подозрение наспам"
+  link_newbie: "подозрение на спам"
   link_blacklist: "спам"
   via_bot: "спам"
   inline_buttons: "сообщение с кнопками"
