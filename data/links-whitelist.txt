@@ -4,3 +4,15 @@
 youtube.com
 youtu.be
 github.com
+decenter.org
+tonscan.org
+etherscan.io
+tronscan.org
+telegram.org
+ton.org
+gram.org
+ton.cat
+gram.observer
+stakee.org
+my.tt
+mytonwallet.org
