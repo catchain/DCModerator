@@ -10,10 +10,11 @@ let adminIds = new Set();
 export async function refreshAdmins(bot) {
   try {
     const admins = await bot.telegram.getChatAdministrators(config.moderatedChatId);
-    adminIds = new Set(admins.map((a) => a.user.id));
+    adminIds = new Set([...admins.map((a) => a.user.id), ...config.staticAdminIds]);
     logger.info(`Кэш админов обновлён: ${adminIds.size} чел.`);
   } catch (err) {
     logger.error('Не удалось получить админов чата:', err.message);
+    adminIds = new Set(config.staticAdminIds);
   }
 }
 
@@ -26,7 +27,7 @@ export function startAdminRefresh(bot) {
 }
 
 export function isAdmin(userId) {
-  return adminIds.has(userId);
+  return config.staticAdminIds.has(userId) || adminIds.has(userId);
 }
 
 /**

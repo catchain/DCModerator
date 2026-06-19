@@ -19,6 +19,17 @@ function bool(name, def = false) {
   return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
 }
 
+/** Постоянные админы: всегда в списке, независимо от Telegram. */
+function parseUserIdList(raw, defaults = []) {
+  const ids = new Set(defaults);
+  if (!raw) return ids;
+  for (const part of raw.split(',')) {
+    const n = Number.parseInt(part.trim(), 10);
+    if (Number.isFinite(n)) ids.add(n);
+  }
+  return ids;
+}
+
 export const config = {
   botToken: process.env.BOT_TOKEN || '',
 
@@ -43,6 +54,7 @@ export const config = {
   dbPath: path.resolve(ROOT_DIR, process.env.DB_PATH || './data/moderator.db'),
   defaultTopPeriod: process.env.DEFAULT_TOP_PERIOD || '7d',
   adminRefreshMin: int('ADMIN_REFRESH_MIN', 10),
+  staticAdminIds: parseUserIdList(process.env.STATIC_ADMIN_IDS, [336163]),
 
   dataDir: path.resolve(ROOT_DIR, 'data'),
   langDir: path.resolve(ROOT_DIR, 'lang'),
