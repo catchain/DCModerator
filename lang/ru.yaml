@@ -55,12 +55,12 @@ reload:
 # --- Лог-канал (формат записей действий модерации) ---
 log:
   # {action} {user} {chat} {reason} {text}
-  entry: "🛡 <b>{action}</b>\nПользователь: {user}\nПричина: {reason}\nТекст: <code>{text}</code>"
+  entry: "<b>{action}</b>\nПользователь: {user}\nПричина: {reason}\nТекст: <code>{text}</code>"
   action_delete: "Удалено сообщение"
-  action_warn: "Предупреждение"
-  action_mute: "Мут"
-  action_ban: "Бан"
-  button_ban: "BAN"
+  action_warn: "⚠️ Предупреждение"
+  action_mute: "🔇 Мут"
+  action_ban: "⛔️ Бан"
+  button_ban: "⛔️BAN"
   button_cancel: "Отмена"
   banned_from_log: "Забанен из лога"
   cancelled_from_log: "Предупреждение отменено"
