@@ -27,11 +27,27 @@ export async function safeDelete(ctx) {
   }
 }
 
+function warnLogKeyboard(userId, warnMessageId) {
+  return {
+    inline_keyboard: [
+      [
+        { text: t('log.button_ban'), callback_data: `wban:${userId}:${warnMessageId}` },
+        { text: t('log.button_cancel'), callback_data: `wcancel:${userId}:${warnMessageId}` },
+      ],
+    ],
+  };
+}
+
 /**
  * Пишет запись в лог-канал (если задан LOG_CHAT_ID).
+ * Для предупреждений с warnMessageId добавляет кнопки BAN / Отмена.
  */
-export async function logAction(bot, { actionKey, user, reason, text }) {
+export async function logAction(bot, { actionKey, user, reason, text, warnMessageId }) {
   if (!config.logChatId) return;
+  const opts = { parse_mode: 'HTML' };
+  if (actionKey === 'action_warn' && warnMessageId && user?.id) {
+    opts.reply_markup = warnLogKeyboard(user.id, warnMessageId);
+  }
   try {
     await bot.telegram.sendMessage(
       config.logChatId,
@@ -41,18 +57,10 @@ export async function logAction(bot, { actionKey, user, reason, text }) {
         reason: reason || '—',
         text: escapeHtml((text || '').slice(0, 300)) || '—',
       }),
-      { parse_mode: 'HTML' },
+      opts,
     );
   } catch (err) {
     logger.warn('Не удалось записать в лог-канал:', err.message);
-  }
-}
-
-async function reply(ctx, str) {
-  try {
-    await ctx.reply(str, { parse_mode: 'HTML' });
-  } catch (err) {
-    logger.warn('Не удалось отправить ответ:', err.message);
   }
 }
 
@@ -64,13 +72,7 @@ export async function warnUser(ctx, { reasonText }) {
   const user = ctx.message.from;
   const count = addWarn(chatId, user.id);
   const m = mention(user);
-
-  await logAction(ctx, {
-    actionKey: 'action_warn',
-    user,
-    reason: reasonText,
-    text: ctx.message.text || ctx.message.caption,
-  });
+  const originalText = ctx.message.text || ctx.message.caption;
 
   if (count >= config.warnLimit) {
     const until = Math.floor(Date.now() / 1000) + config.warnMuteHours * 3600;
@@ -82,6 +84,12 @@ export async function warnUser(ctx, { reasonText }) {
       resetWarns(chatId, user.id);
       clearFlood(user.id);
       await logAction(ctx, {
+        actionKey: 'action_warn',
+        user,
+        reason: reasonText,
+        text: originalText,
+      });
+      await logAction(ctx, {
         actionKey: 'action_mute',
         user,
         reason: t('reason.warn_limit', { hours: config.warnMuteHours }),
@@ -91,10 +99,23 @@ export async function warnUser(ctx, { reasonText }) {
       logger.warn('Не удалось замьютить за варны:', err.message);
     }
   } else {
-    await reply(
-      ctx,
-      t('warn.issued', { user: m, count, limit: config.warnLimit, reason: reasonText }),
-    );
+    let warnMessageId;
+    try {
+      const sent = await ctx.reply(
+        t('warn.issued', { user: m, count, limit: config.warnLimit, reason: reasonText }),
+        { parse_mode: 'HTML' },
+      );
+      warnMessageId = sent.message_id;
+    } catch (err) {
+      logger.warn('Не удалось отправить предупреждение:', err.message);
+    }
+    await logAction(ctx, {
+      actionKey: 'action_warn',
+      user,
+      reason: reasonText,
+      text: originalText,
+      warnMessageId,
+    });
   }
 }
 

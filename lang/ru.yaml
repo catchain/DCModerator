@@ -60,3 +60,7 @@ log:
   action_warn: "Предупреждение"
   action_mute: "Мут"
   action_ban: "Бан"
+  button_ban: "BAN"
+  button_cancel: "Отмена"
+  banned_from_log: "Забанен из лога"
+  cancelled_from_log: "Предупреждение отменено"

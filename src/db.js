@@ -104,3 +104,17 @@ export function getWarnCount(chatId, userId) {
 export function resetWarns(chatId, userId) {
   db.prepare(`DELETE FROM warns WHERE chat_id = ? AND user_id = ?`).run(chatId, userId);
 }
+
+/** Снимает одно предупреждение; возвращает новый счётчик. */
+export function removeWarn(chatId, userId) {
+  const current = getWarnCount(chatId, userId);
+  if (current <= 0) return 0;
+  if (current <= 1) {
+    resetWarns(chatId, userId);
+    return 0;
+  }
+  db.prepare(
+    `UPDATE warns SET count = count - 1, updated_at = ? WHERE chat_id = ? AND user_id = ?`,
+  ).run(nowSec(), chatId, userId);
+  return getWarnCount(chatId, userId);
+}

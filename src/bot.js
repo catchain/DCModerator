@@ -10,6 +10,7 @@ import { initAi } from './moderation/ai.js';
 import { moderateMessage } from './moderation/pipeline.js';
 import { topCommand } from './commands/top.js';
 import { reloadCommand, warnsCommand, unwarnCommand } from './commands/admin.js';
+import { warnLogCallback } from './moderation/warnCallbacks.js';
 
 async function deleteServiceMessage(ctx) {
   if (ctx.chat?.id !== config.moderatedChatId) return;
@@ -37,6 +38,8 @@ async function main() {
   bot.command('reload', reloadCommand);
   bot.command('warns', warnsCommand);
   bot.command('unwarn', unwarnCommand);
+
+  bot.action(/^w(ban|cancel):\d+:\d+$/, warnLogCallback);
 
   // Чистка сервисных сообщений (вход/выход участников).
   bot.on(message('new_chat_members'), deleteServiceMessage);
