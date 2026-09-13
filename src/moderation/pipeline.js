@@ -5,6 +5,7 @@ import { getUserMessageCount, recordMessage } from '../db.js';
 import { hasInlineButtons } from './inlineButtons.js';
 import { findStopword } from './stopwords.js';
 import { checkLinks } from './links.js';
+import { isFromForeignChannel } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
 import { checkAi, isAiEnabled } from './ai.js';
 import { safeDelete, warnUser, banUser, muteUser } from './actions.js';
@@ -37,6 +38,13 @@ export async function moderateMessage(ctx) {
   if (message.via_bot) {
     await safeDelete(ctx);
     await warnUser(ctx, { reasonText: t('reason.via_bot') });
+    return true;
+  }
+
+  // 3.1. Пересылка/цитата из стороннего канала -> удалить + варн.
+  if (isFromForeignChannel(message)) {
+    await safeDelete(ctx);
+    await warnUser(ctx, { reasonText: t('reason.foreign_channel') });
     return true;
   }
 
