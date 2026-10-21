@@ -1,6 +1,6 @@
 import { config } from '../config.js';
 import { t } from '../texts.js';
-import { isAdmin } from '../admins.js';
+import { isAdmin, isStaticAdmin } from '../admins.js';
 import { removeWarn, resetWarns } from '../db.js';
 import { clearFlood } from './flood.js';
 import { logger } from '../utils/logger.js';
@@ -31,6 +31,10 @@ export async function warnLogCallback(ctx) {
   const userId = Number(userIdStr);
   const warnMsgId = Number(msgIdStr);
   const { telegram } = ctx;
+
+  if (action === 'ban' && isStaticAdmin(userId)) {
+    return ctx.answerCbQuery(t('log.static_admin_protected'), { show_alert: true });
+  }
 
   await deleteWarnMessage(telegram, warnMsgId);
 

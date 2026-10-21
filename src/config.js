@@ -30,6 +30,11 @@ function parseUserIdList(raw, defaults = []) {
   return ids;
 }
 
+/** Постоянные админы по умолчанию. Бот никогда их не модерирует. */
+const DEFAULT_STATIC_ADMIN_IDS = [
+  268341399, 336163, 6808848998, 897796, 193824343, 56077720, 1761163019,
+];
+
 export const config = {
   botToken: process.env.BOT_TOKEN || '',
 
@@ -54,7 +59,7 @@ export const config = {
   dbPath: path.resolve(ROOT_DIR, process.env.DB_PATH || './data/moderator.db'),
   defaultTopPeriod: process.env.DEFAULT_TOP_PERIOD || '7d',
   adminRefreshMin: int('ADMIN_REFRESH_MIN', 10),
-  staticAdminIds: parseUserIdList(process.env.STATIC_ADMIN_IDS, [336163]),
+  staticAdminIds: parseUserIdList(process.env.STATIC_ADMIN_IDS, DEFAULT_STATIC_ADMIN_IDS),
 
   dataDir: path.resolve(ROOT_DIR, 'data'),
   langDir: path.resolve(ROOT_DIR, 'lang'),

@@ -3,6 +3,7 @@ import { t } from '../texts.js';
 import { logger } from '../utils/logger.js';
 import { addWarn, resetWarns } from '../db.js';
 import { clearFlood } from './flood.js';
+import { isStaticAdmin } from '../admins.js';
 
 function escapeHtml(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -70,6 +71,7 @@ export async function logAction(bot, { actionKey, user, reason, text, warnMessag
 export async function warnUser(ctx, { reasonText }) {
   const chatId = ctx.chat.id;
   const user = ctx.message.from;
+  if (isStaticAdmin(user?.id)) return;
   const count = addWarn(chatId, user.id);
   const m = mention(user);
   const originalText = ctx.message.text || ctx.message.caption;
@@ -125,6 +127,7 @@ export async function warnUser(ctx, { reasonText }) {
 export async function banUser(ctx, { reasonText }) {
   const chatId = ctx.chat.id;
   const user = ctx.message.from;
+  if (isStaticAdmin(user?.id)) return;
   try {
     await ctx.telegram.banChatMember(chatId, user.id);
     clearFlood(user.id);
@@ -145,6 +148,7 @@ export async function banUser(ctx, { reasonText }) {
 export async function muteUser(ctx, { minutes, reasonText }) {
   const chatId = ctx.chat.id;
   const user = ctx.message.from;
+  if (isStaticAdmin(user?.id)) return;
   const until = Math.floor(Date.now() / 1000) + minutes * 60;
   try {
     await ctx.telegram.restrictChatMember(chatId, user.id, {

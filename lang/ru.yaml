@@ -65,3 +65,4 @@ log:
   button_cancel: "Отмена"
   banned_from_log: "Забанен из лога"
   cancelled_from_log: "Предупреждение отменено"
+  static_admin_protected: "Это постоянный админ, бан невозможен."
