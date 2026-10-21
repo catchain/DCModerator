@@ -5,7 +5,7 @@ import { getUserMessageCount, recordMessage } from '../db.js';
 import { hasInlineButtons } from './inlineButtons.js';
 import { findStopword } from './stopwords.js';
 import { checkLinks } from './links.js';
-import { isFromForeignChannel } from './foreignChannel.js';
+import { isFromForeignChannel, isForeignStory } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
 import { checkAi, isAiEnabled } from './ai.js';
 import { safeDelete, warnUser, banUser, muteUser } from './actions.js';
@@ -28,6 +28,13 @@ export async function moderateMessage(ctx) {
   if (hasInlineButtons(message)) {
     await safeDelete(ctx);
     await banUser(ctx, { reasonText: t('reason.inline_buttons') });
+    return true;
+  }
+
+  // 2.1. Пересланная история из чужого чата -> бан (спам-реклама).
+  if (isForeignStory(message)) {
+    await safeDelete(ctx);
+    await banUser(ctx, { reasonText: t('reason.foreign_story') });
     return true;
   }
 
