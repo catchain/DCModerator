@@ -11,6 +11,7 @@ import { moderateMessage } from './moderation/pipeline.js';
 import { topCommand } from './commands/top.js';
 import { reloadCommand, warnsCommand, unwarnCommand } from './commands/admin.js';
 import { warnLogCallback } from './moderation/warnCallbacks.js';
+import { startCleanup } from './moderation/cleanup.js';
 
 async function deleteServiceMessage(ctx) {
   if (ctx.chat?.id !== config.moderatedChatId) return;
@@ -32,6 +33,7 @@ async function main() {
   await refreshAdmins(bot);
   startAdminRefresh(bot);
   await initAi();
+  startCleanup(bot);
 
   // Команды (регистрируем до общего обработчика сообщений).
   bot.command('top', topCommand);
@@ -45,8 +47,9 @@ async function main() {
   bot.on(message('new_chat_members'), deleteServiceMessage);
   bot.on(message('left_chat_member'), deleteServiceMessage);
 
-  // Основной конвейер модерации.
-  bot.on('message', async (ctx) => {
+  // Основной конвейер модерации. Правки проверяем тем же конвейером:
+  // спамеры часто отправляют безобидный текст и потом меняют его.
+  bot.on(['message', 'edited_message'], async (ctx) => {
     try {
       await moderateMessage(ctx);
     } catch (err) {

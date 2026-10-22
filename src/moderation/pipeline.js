@@ -7,15 +7,17 @@ import { findStopword } from './stopwords.js';
 import { checkLinks } from './links.js';
 import { isFromForeignChannel, isForeignStory } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
+import { checkJobSpam } from './jobSpam.js';
 import { checkAi, isAiEnabled } from './ai.js';
 import { safeDelete, warnUser, banUser, muteUser } from './actions.js';
 
 /**
- * Главный конвейер модерации одного сообщения.
+ * Главный конвейер модерации одного сообщения (нового или отредактированного).
  * Возвращает true, если сообщение было обработано (удалено/наказано).
  */
 export async function moderateMessage(ctx) {
-  const message = ctx.message;
+  const message = ctx.message ?? ctx.editedMessage;
+  const isEdit = !ctx.message;
   if (!message || ctx.chat?.id !== config.moderatedChatId) return false;
 
   // 1. Иммунитет: админы, анонимные админы, связанный канал.
@@ -38,8 +40,8 @@ export async function moderateMessage(ctx) {
     return true;
   }
 
-  // Регистрируем сообщение для антифлуда (до возможного удаления).
-  const floodTriggered = registerAndCheckFlood(user.id);
+  // Регистрируем сообщение для антифлуда (до возможного удаления). Правки не считаем.
+  const floodTriggered = !isEdit && registerAndCheckFlood(user.id);
 
   // 3. Отправлено через бота (via_bot) -> удалить + варн.
   if (message.via_bot) {
@@ -65,8 +67,21 @@ export async function moderateMessage(ctx) {
     return true;
   }
 
-  // 5. Ссылки (политика: новичкам — любые, остальным — чёрный список).
   const isNewbie = getUserMessageCount(config.moderatedChatId, user.id) < config.newbieMessageThreshold;
+
+  // 4.1. Спам-вербовка (см. jobSpam.js). Наркошоп у новичка -> бан, иначе удалить + варн.
+  const jobSpam = checkJobSpam(message, { isNewbie });
+  if (jobSpam.verdict) {
+    await safeDelete(ctx);
+    if (jobSpam.verdict === 'drug' && isNewbie) {
+      await banUser(ctx, { reasonText: t('reason.job_drug') });
+    } else {
+      await warnUser(ctx, { reasonText: t(`reason.job_${jobSpam.verdict}`) });
+    }
+    return true;
+  }
+
+  // 5. Ссылки (политика: новичкам — любые, остальным — чёрный список).
   const linkVerdict = checkLinks(message, { isNewbie });
   if (linkVerdict.block) {
     await safeDelete(ctx);
@@ -94,7 +109,8 @@ export async function moderateMessage(ctx) {
     return true;
   }
 
-  // Сообщение прошло фильтры — засчитываем в статистику.
+  // Сообщение прошло фильтры — засчитываем в статистику (правку повторно не считаем).
+  if (isEdit) return false;
   recordMessage({
     chatId: config.moderatedChatId,
     userId: user.id,

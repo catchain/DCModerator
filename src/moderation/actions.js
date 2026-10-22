@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { t } from '../texts.js';
 import { logger } from '../utils/logger.js';
-import { addWarn, resetWarns } from '../db.js';
+import { addWarn, resetWarns, scheduleDelete } from '../db.js';
 import { clearFlood } from './flood.js';
 import { isStaticAdmin } from '../admins.js';
 
@@ -70,11 +70,11 @@ export async function logAction(bot, { actionKey, user, reason, text, warnMessag
  */
 export async function warnUser(ctx, { reasonText }) {
   const chatId = ctx.chat.id;
-  const user = ctx.message.from;
+  const user = ctx.msg.from;
   if (isStaticAdmin(user?.id)) return;
   const count = addWarn(chatId, user.id);
   const m = mention(user);
-  const originalText = ctx.message.text || ctx.message.caption;
+  const originalText = ctx.msg.text || ctx.msg.caption;
 
   if (count >= config.warnLimit) {
     const until = Math.floor(Date.now() / 1000) + config.warnMuteHours * 3600;
@@ -108,6 +108,9 @@ export async function warnUser(ctx, { reasonText }) {
         { parse_mode: 'HTML' },
       );
       warnMessageId = sent.message_id;
+      if (config.warnMessageTtlSec > 0) {
+        scheduleDelete(chatId, warnMessageId, config.warnMessageTtlSec);
+      }
     } catch (err) {
       logger.warn('Не удалось отправить предупреждение:', err.message);
     }
@@ -126,7 +129,7 @@ export async function warnUser(ctx, { reasonText }) {
  */
 export async function banUser(ctx, { reasonText }) {
   const chatId = ctx.chat.id;
-  const user = ctx.message.from;
+  const user = ctx.msg.from;
   if (isStaticAdmin(user?.id)) return;
   try {
     await ctx.telegram.banChatMember(chatId, user.id);
@@ -138,7 +141,7 @@ export async function banUser(ctx, { reasonText }) {
     actionKey: 'action_ban',
     user,
     reason: reasonText,
-    text: ctx.message.text || ctx.message.caption,
+    text: ctx.msg.text || ctx.msg.caption,
   });
 }
 
@@ -147,7 +150,7 @@ export async function banUser(ctx, { reasonText }) {
  */
 export async function muteUser(ctx, { minutes, reasonText }) {
   const chatId = ctx.chat.id;
-  const user = ctx.message.from;
+  const user = ctx.msg.from;
   if (isStaticAdmin(user?.id)) return;
   const until = Math.floor(Date.now() / 1000) + minutes * 60;
   try {
@@ -163,6 +166,6 @@ export async function muteUser(ctx, { minutes, reasonText }) {
     actionKey: 'action_mute',
     user,
     reason: reasonText,
-    text: ctx.message.text || ctx.message.caption,
+    text: ctx.msg.text || ctx.msg.caption,
   });
 }

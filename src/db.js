@@ -30,6 +30,14 @@ export function initDb() {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (chat_id, user_id)
     );
+
+    CREATE TABLE IF NOT EXISTS pending_deletes (
+      chat_id    INTEGER NOT NULL,
+      message_id INTEGER NOT NULL,
+      delete_at  INTEGER NOT NULL,
+      PRIMARY KEY (chat_id, message_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_pending_deletes_time ON pending_deletes (delete_at);
   `);
 
   logger.info(`БД инициализирована: ${config.dbPath}`);
@@ -117,4 +125,24 @@ export function removeWarn(chatId, userId) {
     `UPDATE warns SET count = count - 1, updated_at = ? WHERE chat_id = ? AND user_id = ?`,
   ).run(nowSec(), chatId, userId);
   return getWarnCount(chatId, userId);
+}
+
+/** Ставит сообщение бота в очередь на удаление через ttlSec секунд. */
+export function scheduleDelete(chatId, messageId, ttlSec) {
+  db.prepare(
+    `INSERT OR REPLACE INTO pending_deletes (chat_id, message_id, delete_at) VALUES (?, ?, ?)`,
+  ).run(chatId, messageId, nowSec() + ttlSec);
+}
+
+/** Сообщения, срок удаления которых наступил. */
+export function getDueDeletes(limit = 50) {
+  return db
+    .prepare(
+      `SELECT chat_id, message_id FROM pending_deletes WHERE delete_at <= ? ORDER BY delete_at LIMIT ?`,
+    )
+    .all(nowSec(), limit);
+}
+
+export function removePendingDelete(chatId, messageId) {
+  db.prepare(`DELETE FROM pending_deletes WHERE chat_id = ? AND message_id = ?`).run(chatId, messageId);
 }
