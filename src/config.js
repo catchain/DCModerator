@@ -47,7 +47,7 @@ export const config = {
   warnLimit: int('WARN_LIMIT', 3),
   warnMuteHours: int('WARN_MUTE_HOURS', 24),
   // Через сколько секунд удалять предупреждение из чата (0 — не удалять).
-  warnMessageTtlSec: int('WARN_MESSAGE_TTL_SEC', 60),
+  warnMessageTtlSec: int('WARN_MESSAGE_TTL_SEC', 30),
 
   flood: {
     maxMessages: int('FLOOD_MAX_MESSAGES', 5),

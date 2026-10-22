@@ -1,7 +1,7 @@
 import { getDueDeletes, removePendingDelete } from '../db.js';
 import { logger } from '../utils/logger.js';
 
-const SWEEP_INTERVAL_MS = 15 * 1000;
+const SWEEP_INTERVAL_MS = 5 * 1000;
 
 /**
  * Удаляет сообщения бота, срок которых наступил (см. scheduleDelete).
