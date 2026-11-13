@@ -26,9 +26,9 @@ export function startAdminRefresh(bot) {
   setInterval(() => refreshAdmins(bot), ms).unref?.();
 }
 
-/** Постоянный админ: бот никогда не банит, не мьютит и не варнит его. */
+/** Постоянный админ или пользователь из белого списка: бот никогда не трогает его. */
 export function isStaticAdmin(userId) {
-  return config.staticAdminIds.has(userId);
+  return config.staticAdminIds.has(userId) || config.whitelistUserIds.has(userId);
 }
 
 export function isAdmin(userId) {
@@ -64,7 +64,9 @@ export function isImmune(message) {
     if (!forwardFrom || isProtectedChannel(forwardFrom.id)) return true;
   }
 
-  if (message.from && isAdmin(message.from.id)) return true;
+  if (message.from && (isAdmin(message.from.id) || config.whitelistUserIds.has(message.from.id))) {
+    return true;
+  }
 
   return false;
 }

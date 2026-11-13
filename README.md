@@ -76,14 +76,18 @@ npm start
 ### Требования к боту в чате
 Бот должен быть **администратором** модерируемого чата с правами: удалять сообщения, банить/ограничивать участников. Также отключи у бота privacy mode через @BotFather (`/setprivacy` → Disable), иначе он не увидит все сообщения.
 
-## AI-модерация (опционально, бесплатно)
+## AI-модерация (опционально)
 
-OpenAI `omni-moderation-latest` — бесплатная модель. Включается флагом:
+Работает через OpenCode Zen (OpenAI-совместимый API, https://opencode.ai/zen/v1).
+Модель классифицирует сообщение; при нарушении бот удаляет его и выдаёт варн.
+
+Включается, если в `.env` задан ключ:
 
 ```
-AI_MODERATION=true
-OPENAI_API_KEY=sk-...
+OPENCODE_API_KEY=<ключ из opencode.ai/auth>
 ```
+
+Модель задана в `src/config.js` (`ai.model`).
 
 Установи зависимость: `npm install openai` (она в optionalDependencies).
 

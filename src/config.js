@@ -35,6 +35,13 @@ const DEFAULT_STATIC_ADMIN_IDS = [
   268341399, 336163, 6808848998, 897796, 193824343, 56077720, 1761163019,
 ];
 
+/** Белый список по умолчанию: без прав админа, но бот их никогда не модерирует. */
+const DEFAULT_WHITELIST_USER_IDS = [
+  8804799652, 8740644952, 9298402411, 1583813260, 7698764484, 8331038741,
+  7292340731, 8261766312, 146337173, 9205082739, 9051507190, 8688598951,
+  8637833487, 8693780709, 9123783343,
+];
+
 export const config = {
   botToken: process.env.BOT_TOKEN || '',
 
@@ -55,13 +62,19 @@ export const config = {
     muteMin: int('FLOOD_MUTE_MIN', 5),
   },
 
-  aiModeration: bool('AI_MODERATION', false),
-  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  // AI-модерация включается сама, если задан OPENCODE_API_KEY.
+  ai: {
+    apiKey: process.env.OPENCODE_API_KEY || '',
+    baseUrl: 'https://opencode.ai/zen/v1',
+    model: 'gpt-5.4-nano',
+    timeoutMs: 15000,
+  },
 
   dbPath: path.resolve(ROOT_DIR, process.env.DB_PATH || './data/moderator.db'),
   defaultTopPeriod: process.env.DEFAULT_TOP_PERIOD || '7d',
   adminRefreshMin: int('ADMIN_REFRESH_MIN', 10),
   staticAdminIds: parseUserIdList(process.env.STATIC_ADMIN_IDS, DEFAULT_STATIC_ADMIN_IDS),
+  whitelistUserIds: parseUserIdList(process.env.WHITELIST_USER_IDS, DEFAULT_WHITELIST_USER_IDS),
 
   dataDir: path.resolve(ROOT_DIR, 'data'),
   langDir: path.resolve(ROOT_DIR, 'lang'),
@@ -74,9 +87,6 @@ export function validateConfig() {
   const errors = [];
   if (!config.botToken) errors.push('BOT_TOKEN не задан');
   if (!config.moderatedChatId) errors.push('MODERATED_CHAT_ID не задан или некорректен');
-  if (config.aiModeration && !config.openaiApiKey) {
-    errors.push('AI_MODERATION=true, но OPENAI_API_KEY пуст');
-  }
   if (errors.length) {
     throw new Error('Ошибки конфигурации:\n- ' + errors.join('\n- '));
   }
