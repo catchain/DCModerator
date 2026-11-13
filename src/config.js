@@ -36,7 +36,7 @@ const DEFAULT_STATIC_ADMIN_IDS = [
 ];
 
 /** Белый список по умолчанию: без прав админа, но бот их никогда не модерирует. */
-const DEFAULT_WHITELIST_USER_IDS = [
+const DEFAULT_PROTECTED_USER_IDS = [
   8804799652, 8740644952, 9298402411, 1583813260, 7698764484, 8331038741,
   7292340731, 8261766312, 146337173, 9205082739, 9051507190, 8688598951,
   8637833487, 8693780709, 9123783343,
@@ -74,7 +74,7 @@ export const config = {
   defaultTopPeriod: process.env.DEFAULT_TOP_PERIOD || '7d',
   adminRefreshMin: int('ADMIN_REFRESH_MIN', 10),
   staticAdminIds: parseUserIdList(process.env.STATIC_ADMIN_IDS, DEFAULT_STATIC_ADMIN_IDS),
-  whitelistUserIds: parseUserIdList(process.env.WHITELIST_USER_IDS, DEFAULT_WHITELIST_USER_IDS),
+  whitelistUserIds: parseUserIdList(process.env.PROTECTED_USER_ID, DEFAULT_PROTECTED_USER_IDS),
 
   dataDir: path.resolve(ROOT_DIR, 'data'),
   langDir: path.resolve(ROOT_DIR, 'lang'),
