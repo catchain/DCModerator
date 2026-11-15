@@ -28,6 +28,7 @@ reason:
   job_drug: "вербовка в запрещённую деятельность"
   link_newbie: "подозрение на спам"
   link_blacklist: "спам"
+  private_invite: "ссылка на закрытый канал"
   via_bot: "спам"
   foreign_channel: "пересылка/цитата из стороннего канала"
   foreign_story: "пересланная история из чужого чата"

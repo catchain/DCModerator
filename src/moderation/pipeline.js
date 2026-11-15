@@ -4,7 +4,7 @@ import { isImmune } from '../admins.js';
 import { getUserMessageCount, recordMessage } from '../db.js';
 import { hasInlineButtons } from './inlineButtons.js';
 import { findStopword } from './stopwords.js';
-import { checkLinks } from './links.js';
+import { checkLinks, hasPrivateInviteLink } from './links.js';
 import { isFromForeignChannel, isForeignStory } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
 import { checkJobSpam } from './jobSpam.js';
@@ -66,6 +66,13 @@ export async function moderateMessage(ctx) {
   if (isForeignStory(message)) {
     await safeDelete(ctx);
     await banUser(ctx, { reasonText: t('reason.foreign_story') });
+    return true;
+  }
+
+  // 2.2. Ссылка-приглашение в закрытый канал (t.me/+...) -> бан без предупреждения.
+  if (hasPrivateInviteLink(message)) {
+    await safeDelete(ctx);
+    await banUser(ctx, { reasonText: t('reason.private_invite') });
     return true;
   }
 

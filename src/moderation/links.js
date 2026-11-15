@@ -67,3 +67,19 @@ export function checkLinks(message, { isNewbie }) {
 
   return { block: false, reason: null, domain: null };
 }
+
+// Приватная инвайт-ссылка: t.me/+hash, telegram.me/+hash, t.me/joinchat/hash.
+const PRIVATE_INVITE_RE = /(?:^|[^\w.-])(?:https?:\/\/)?(?:www\.)?(?:t|telegram)\.(?:me|dog)\/(?:\+|%2B|joinchat\/)[\w-]+/i;
+
+/**
+ * Есть ли в сообщении ссылка-приглашение в закрытый канал/чат (текст или text_link).
+ *
+ * @param {import('telegraf').Context['message']} message
+ * @returns {boolean}
+ */
+export function hasPrivateInviteLink(message) {
+  const text = message?.text || message?.caption || '';
+  if (PRIVATE_INVITE_RE.test(text)) return true;
+  const entities = message?.entities || message?.caption_entities || [];
+  return entities.some((e) => e.type === 'text_link' && e.url && PRIVATE_INVITE_RE.test(e.url));
+}
