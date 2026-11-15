@@ -12,6 +12,7 @@ import { topCommand } from './commands/top.js';
 import { reloadCommand, warnsCommand, unwarnCommand } from './commands/admin.js';
 import { warnLogCallback } from './moderation/warnCallbacks.js';
 import { startCleanup } from './moderation/cleanup.js';
+import { onChatMember, onNewChatMembers } from './moderation/joinBio.js';
 
 async function deleteServiceMessage(ctx) {
   if (ctx.chat?.id !== config.moderatedChatId) return;
@@ -43,8 +44,22 @@ async function main() {
 
   bot.action(/^w(ban|cancel):\d+:\d+$/, warnLogCallback);
 
-  // Чистка сервисных сообщений (вход/выход участников).
-  bot.on(message('new_chat_members'), deleteServiceMessage);
+  // Вход: удаляем сервисное сообщение и проверяем био (telegra.ph -> бан).
+  bot.on(message('new_chat_members'), async (ctx) => {
+    await deleteServiceMessage(ctx);
+    try {
+      await onNewChatMembers(ctx);
+    } catch (err) {
+      logger.error('Ошибка проверки входа:', err.message);
+    }
+  });
+  bot.on('chat_member', async (ctx) => {
+    try {
+      await onChatMember(ctx);
+    } catch (err) {
+      logger.error('Ошибка проверки входа:', err.message);
+    }
+  });
   bot.on(message('left_chat_member'), deleteServiceMessage);
 
   // Основной конвейер модерации. Правки проверяем тем же конвейером:
@@ -60,7 +75,11 @@ async function main() {
   bot.catch((err) => logger.error('Telegraf error:', err));
 
   // bot.launch() резолвится только после остановки бота, поэтому не ждём его здесь.
-  bot.launch({ dropPendingUpdates: true }).catch((err) => {
+  bot.launch({
+    dropPendingUpdates: true,
+    // chat_member не приходит по умолчанию: без него вход без сервисного сообщения не виден.
+    allowedUpdates: ['message', 'edited_message', 'callback_query', 'chat_member'],
+  }).catch((err) => {
     logger.error('Ошибка polling:', err.message);
     process.exit(1);
   });

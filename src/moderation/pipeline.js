@@ -9,7 +9,13 @@ import { isFromForeignChannel, isForeignStory } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
 import { checkJobSpam } from './jobSpam.js';
 import { checkAi, isAiEnabled } from './ai.js';
-import { safeDelete, warnUser, banUser, muteUser } from './actions.js';
+import { checkBio, BAN_VERDICTS } from './bio.js';
+import { safeDelete, warnUser, banUser, muteUser, logAction } from './actions.js';
+
+// Лог удалений «ссылка в био» — не чаще раза в 10 минут на пользователя.
+const BIO_LOG_INTERVAL_MS = 10 * 60 * 1000;
+/** @type {Map<number, number>} */
+const bioLoggedAt = new Map();
 
 /**
  * Главный конвейер модерации одного сообщения (нового или отредактированного).
@@ -25,6 +31,29 @@ export async function moderateMessage(ctx) {
 
   const user = message.from;
   if (!user) return false;
+
+  // 1.1. Био автора: telegra.ph или зачёркивающие символы -> бан, любая другая ссылка -> удаление.
+  const bio = await checkBio(ctx.telegram, user.id);
+  if (BAN_VERDICTS.has(bio.verdict)) {
+    await safeDelete(ctx);
+    await banUser(ctx, { reasonText: t(`reason.bio_${bio.verdict}`) });
+    return true;
+  }
+  if (bio.verdict === 'link') {
+    await safeDelete(ctx);
+    const last = bioLoggedAt.get(user.id) ?? 0;
+    if (Date.now() - last > BIO_LOG_INTERVAL_MS) {
+      if (bioLoggedAt.size > 5000) bioLoggedAt.clear();
+      bioLoggedAt.set(user.id, Date.now());
+      await logAction(ctx, {
+        actionKey: 'action_delete',
+        user,
+        reason: t('reason.bio_link'),
+        text: message.text || message.caption,
+      });
+    }
+    return true;
+  }
 
   // 2. Inline-кнопки -> бан (почти 100% спам).
   if (hasInlineButtons(message)) {
