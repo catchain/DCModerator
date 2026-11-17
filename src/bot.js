@@ -42,7 +42,7 @@ async function main() {
   bot.command('warns', warnsCommand);
   bot.command('unwarn', unwarnCommand);
 
-  bot.action(/^w(ban|cancel):\d+:\d+$/, warnLogCallback);
+  bot.action(/^w(ban|unban|cancel):\d+:\d+$/, warnLogCallback);
 
   // Вход: удаляем сервисное сообщение и проверяем био (telegra.ph -> бан).
   bot.on(message('new_chat_members'), async (ctx) => {

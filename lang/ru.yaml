@@ -72,6 +72,8 @@ log:
   action_ban: "⛔️ Бан"
   button_ban: "⛔️BAN"
   button_cancel: "Отмена"
+  button_unban: "Разбанить"
   banned_from_log: "Забанен из лога"
+  unbanned_from_log: "Разбанен"
   cancelled_from_log: "Предупреждение отменено"
   static_admin_protected: "Это постоянный админ, бан невозможен."

@@ -5,7 +5,7 @@ import { removeWarn, resetWarns } from '../db.js';
 import { clearFlood } from './flood.js';
 import { logger } from '../utils/logger.js';
 
-const CALLBACK_RE = /^w(ban|cancel):(\d+):(\d+)$/;
+const CALLBACK_RE = /^w(ban|unban|cancel):(\d+):(\d+)$/;
 
 async function deleteWarnMessage(telegram, messageId) {
   if (!messageId) return;
@@ -16,7 +16,7 @@ async function deleteWarnMessage(telegram, messageId) {
   }
 }
 
-/** Обработка кнопок BAN / Отмена в лог-канале. */
+/** Обработка кнопок BAN / Отмена / Разбанить в лог-канале. */
 export async function warnLogCallback(ctx) {
   if (ctx.chat?.id !== config.logChatId) return;
 
@@ -38,7 +38,9 @@ export async function warnLogCallback(ctx) {
 
   await deleteWarnMessage(telegram, warnMsgId);
 
-  const statusKey = action === 'ban' ? 'log.banned_from_log' : 'log.cancelled_from_log';
+  let statusKey = 'log.cancelled_from_log';
+  // После бана остаётся одна кнопка «Разбанить», после разбана — снова BAN.
+  let keyboard = [];
 
   if (action === 'ban') {
     try {
@@ -49,14 +51,25 @@ export async function warnLogCallback(ctx) {
       logger.warn('Не удалось забанить из лога:', err.message);
       return ctx.answerCbQuery(err.message, { show_alert: true });
     }
+    statusKey = 'log.banned_from_log';
+    keyboard = [[{ text: t('log.button_unban'), callback_data: `wunban:${userId}:0` }]];
+  } else if (action === 'unban') {
+    try {
+      await telegram.unbanChatMember(config.moderatedChatId, userId, { only_if_banned: true });
+    } catch (err) {
+      logger.warn('Не удалось разбанить из лога:', err.message);
+      return ctx.answerCbQuery(err.message, { show_alert: true });
+    }
+    statusKey = 'log.unbanned_from_log';
+    keyboard = [[{ text: t('log.button_ban'), callback_data: `wban:${userId}:0` }]];
   } else {
     removeWarn(config.moderatedChatId, userId);
   }
 
   try {
-    await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+    await ctx.editMessageReplyMarkup({ inline_keyboard: keyboard });
   } catch (err) {
-    logger.warn('Не удалось убрать кнопки в логе:', err.message);
+    logger.warn('Не удалось обновить кнопки в логе:', err.message);
   }
 
   await ctx.answerCbQuery(t(statusKey));
