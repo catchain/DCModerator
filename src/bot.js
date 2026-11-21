@@ -13,6 +13,7 @@ import { reloadCommand, warnsCommand, unwarnCommand } from './commands/admin.js'
 import { warnLogCallback } from './moderation/warnCallbacks.js';
 import { startCleanup } from './moderation/cleanup.js';
 import { onChatMember, onNewChatMembers } from './moderation/joinBio.js';
+import { commentRulesUnderPost } from './channelPost.js';
 
 async function deleteServiceMessage(ctx) {
   if (ctx.chat?.id !== config.moderatedChatId) return;
@@ -66,6 +67,8 @@ async function main() {
   // спамеры часто отправляют безобидный текст и потом меняют его.
   bot.on(['message', 'edited_message'], async (ctx) => {
     try {
+      // Пост канала: оставляем под ним комментарий с правилами, модерация не нужна.
+      if (await commentRulesUnderPost(ctx)) return;
       await moderateMessage(ctx);
     } catch (err) {
       logger.error('Ошибка модерации:', err.message);
