@@ -5,17 +5,20 @@ import { getUserMessageCount, recordMessage } from '../db.js';
 import { hasInlineButtons } from './inlineButtons.js';
 import { findStopword } from './stopwords.js';
 import { checkLinks, hasPrivateInviteLink } from './links.js';
-import { isFromForeignChannel, isForeignStory } from './foreignChannel.js';
+import { isFromForeignChannel, isForeignStory, isForeignSenderChat } from './foreignChannel.js';
 import { registerAndCheckFlood } from './flood.js';
 import { checkJobSpam } from './jobSpam.js';
 import { checkAi, isAiEnabled } from './ai.js';
 import { checkBio, BAN_VERDICTS } from './bio.js';
-import { safeDelete, warnUser, banUser, muteUser, logAction } from './actions.js';
+import { safeDelete, warnUser, banUser, muteUser, logAction, chatMention } from './actions.js';
 
 // Лог удалений «ссылка в био» — не чаще раза в 10 минут на пользователя.
 const BIO_LOG_INTERVAL_MS = 10 * 60 * 1000;
 /** @type {Map<number, number>} */
 const bioLoggedAt = new Map();
+// Лог удалений «от имени канала» — не чаще раза в 10 минут на канал.
+/** @type {Map<number, number>} */
+const senderChatLoggedAt = new Map();
 
 /**
  * Главный конвейер модерации одного сообщения (нового или отредактированного).
@@ -28,6 +31,25 @@ export async function moderateMessage(ctx) {
 
   // 1. Иммунитет: админы, анонимные админы, связанный канал.
   if (isImmune(message)) return false;
+
+  // 1.0. Сообщение от имени чужого канала/чата -> только удаление.
+  // Автор здесь — служебный Channel_Bot, поэтому варн и бан не применяем.
+  if (isForeignSenderChat(message)) {
+    await safeDelete(ctx);
+    const senderChat = message.sender_chat;
+    const last = senderChatLoggedAt.get(senderChat.id) ?? 0;
+    if (Date.now() - last > BIO_LOG_INTERVAL_MS) {
+      if (senderChatLoggedAt.size > 5000) senderChatLoggedAt.clear();
+      senderChatLoggedAt.set(senderChat.id, Date.now());
+      await logAction(ctx, {
+        actionKey: 'action_delete',
+        userHtml: chatMention(senderChat),
+        reason: t('reason.sender_chat'),
+        text: message.text || message.caption,
+      });
+    }
+    return true;
+  }
 
   const user = message.from;
   if (!user) return false;

@@ -46,3 +46,16 @@ export function isForeignStory(message) {
   if (!story) return false;
   return !isOwnChat(story.chat?.id);
 }
+
+/**
+ * Сообщение отправлено от имени чужого канала или чата (sender_chat).
+ * Свой чат (анонимный админ) и привязанные каналы не считаются чужими.
+ *
+ * @param {import('telegraf').Context['message']} message
+ * @returns {boolean}
+ */
+export function isForeignSenderChat(message) {
+  const senderChat = message?.sender_chat;
+  if (!senderChat) return false;
+  return !isOwnChat(senderChat.id);
+}

@@ -18,6 +18,15 @@ export function mention(user) {
   return `<a href="tg://user?id=${user.id}">${name}</a>`;
 }
 
+/**
+ * HTML-подпись канала/чата (sender_chat) для лога: название, ссылка и id.
+ */
+export function chatMention(chat) {
+  const title = escapeHtml(chat.title || chat.username || t('common.no_username'));
+  const name = chat.username ? `<a href="https://t.me/${chat.username}">${title}</a>` : title;
+  return `${name} (<code>${chat.id}</code>)`;
+}
+
 export async function safeDelete(ctx) {
   try {
     await ctx.deleteMessage();
@@ -43,7 +52,7 @@ function warnLogKeyboard(userId, warnMessageId) {
  * Пишет запись в лог-канал (если задан LOG_CHAT_ID).
  * Для предупреждений с warnMessageId добавляет кнопки BAN / Отмена.
  */
-export async function logAction(bot, { actionKey, user, reason, text, warnMessageId }) {
+export async function logAction(bot, { actionKey, user, userHtml, reason, text, warnMessageId }) {
   if (!config.logChatId) return;
   const opts = { parse_mode: 'HTML' };
   if (actionKey === 'action_warn' && warnMessageId && user?.id) {
@@ -54,7 +63,7 @@ export async function logAction(bot, { actionKey, user, reason, text, warnMessag
       config.logChatId,
       t('log.entry', {
         action: t(`log.${actionKey}`),
-        user: mention(user),
+        user: userHtml ?? mention(user),
         reason: reason || '—',
         text: escapeHtml((text || '').slice(0, 300)) || '—',
       }),
