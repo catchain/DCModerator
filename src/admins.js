@@ -54,6 +54,8 @@ export function isImmune(message) {
     if (senderChat.id === config.moderatedChatId) return true;
     // Пост от имени привязанного канала.
     if (isProtectedChannel(senderChat.id)) return true;
+    // Канал из белого списка.
+    if (config.whitelistUserIds.has(senderChat.id)) return true;
   }
 
   const forwardFrom = message.forward_from_chat;
